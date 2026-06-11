@@ -7,7 +7,15 @@ export const ADMIN_COOKIE = "herbokolog_admin";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 8; // 8 saat
 
 function secret(): string {
-  return process.env.ADMIN_SESSION_SECRET ?? "insecure-dev-secret-change-me";
+  const s = process.env.ADMIN_SESSION_SECRET;
+  if (s && s.length >= 16) return s;
+  // Production'da zayıf/eksik oturum anahtarına izin verme.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "ADMIN_SESSION_SECRET tanımlı ve en az 16 karakter olmalı (production).",
+    );
+  }
+  return "insecure-dev-secret-change-me";
 }
 
 function sign(payload: string): string {

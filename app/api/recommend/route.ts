@@ -10,7 +10,7 @@ export async function POST(
   req: Request,
 ): Promise<NextResponse<RecommendResponse | { error: string }>> {
   const ip = getClientIp(req);
-  const limit = rateLimit(ip);
+  const limit = await rateLimit(ip);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Çok fazla istek. Lütfen biraz sonra tekrar deneyin." },

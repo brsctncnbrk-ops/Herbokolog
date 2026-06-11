@@ -16,7 +16,7 @@ const OUT_OF_SCOPE_MESSAGE =
 export async function POST(req: Request): Promise<NextResponse<AnalyzeResponse | { error: string }>> {
   // Rate limit.
   const ip = getClientIp(req);
-  const limit = rateLimit(ip);
+  const limit = await rateLimit(ip);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Çok fazla istek. Lütfen biraz sonra tekrar deneyin." },

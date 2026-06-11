@@ -11,23 +11,43 @@ deodorant/parfüm, el-ayak-tırnak. **Hedef pazar:** Türkiye (arayüz Türkçe)
 
 ---
 
-## Tarayıcıda Dene (Vercel — kurulumsuz)
+## 🚀 Production'a Alma (Vercel + PostgreSQL)
 
-Uygulama **sıfır yapılandırmayla** Vercel'de çalışacak şekilde hazırlandı:
-harici veritabanı gerekmez. Hazır-seed'li SQLite, repoya gömülüdür ve sunucusuz
-ortamda runtime'da `/tmp`'ye yazılır (`lib/prisma.ts`). `ANTHROPIC_API_KEY`
-girilmezse keyword tabanlı yedek analiz devreye girer.
+Go-live runbook'u. Uygulama artık kalıcı **PostgreSQL** kullanır.
 
-**Adımlar:**
-1. [vercel.com/new](https://vercel.com/new) → **Import Git Repository** → `Herbokolog`'u seç.
-2. Branch olarak `claude/md-file-review-plan-cu5rqs` (veya merge edildiyse `main`).
-3. Framework otomatik **Next.js** algılanır. Hiçbir env değişkeni zorunlu değildir.
-4. **Deploy** → `https://...vercel.app` adresinden aç.
-5. (Opsiyonel) Gerçek Claude analizi için Project Settings → Environment Variables'a
-   `ANTHROPIC_API_KEY` ekle.
+**1) Veritabanı oluştur (Neon — ücretsiz katman).**
+[neon.tech](https://neon.tech) → yeni proje → `DATABASE_URL` bağlantı dizesini kopyala
+(`postgresql://...?sslmode=require`). Vercel Postgres veya Supabase de olur.
 
-> Sunucusuz ortamda yazma işlemleri (admin, cron) instance ömrü boyunca `/tmp`'de
-> tutulur; kalıcı veri için PostgreSQL'e geçiş önerilir (aşağıya bakın).
+**2) Vercel'de projeyi import et.**
+[vercel.com/new](https://vercel.com/new) → `Herbokolog` reposu → Framework otomatik **Next.js**.
+
+**3) Environment Variables ekle** (Project Settings → Environment Variables):
+
+| Değişken | Zorunlu | Değer |
+|---|---|---|
+| `DATABASE_URL` | ✅ | Neon bağlantı dizesi |
+| `ADMIN_PASSWORD` | ✅ | güçlü şifre |
+| `ADMIN_SESSION_SECRET` | ✅ | en az 32 karakter rastgele |
+| `CRON_SECRET` | ✅ | rastgele uzun değer |
+| `ANTHROPIC_API_KEY` | ⬜ | gerçek Claude analizi için (boşsa keyword yedeği) |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | ⬜ | paylaşımlı rate limit için |
+
+**4) Deploy.** Build sırasında `prisma migrate deploy` migration'ları otomatik uygular.
+
+**5) Veritabanını doldur (bir kez).** Migration'lar tabloları oluşturur ama veri eklemez.
+Gerçek ürünlerini **admin panelinden** (`/admin`) ekle, ya da örnek demo verisiyle başla:
+
+```bash
+# Lokalde, .env içindeki DATABASE_URL'i Neon'a ayarlayıp:
+npm run db:seed        # 51 örnek ürün + IngredientMap + sponsorluk yükler
+```
+
+> ⚠️ `seed` script'i mevcut veriyi **silip yeniden yükler** — yalnızca ilk kurulumda
+> veya sıfırlamak istediğinde çalıştır. Production verisi admin panelinden yönetilir.
+
+**6) Cron'ları aç.** `vercel.json` zamanlamaları hazır; Vercel projesinde Cron'lar
+otomatik kaydolur (`CRON_SECRET` ile korunur).
 
 ---
 
@@ -35,16 +55,16 @@ girilmezse keyword tabanlı yedek analiz devreye girer.
 
 ```bash
 npm install
-cp .env.example .env        # değerleri doldurun (boş ANTHROPIC_API_KEY de çalışır)
-npx prisma db push          # SQLite şemasını oluştur
-npx prisma db seed          # 51 örnek ürün + etken madde haritası + sponsorluklar
+cp .env.example .env        # DATABASE_URL'i (Neon veya yerel Postgres) doldur
+npm run setup               # prisma generate + migrate deploy + seed
 npm run dev                 # http://localhost:3000
 ```
 
+Yerel Postgres yoksa en kolayı: ücretsiz bir Neon DB açıp `DATABASE_URL`'i `.env`'e koymak.
+
 > **API anahtarı olmadan da çalışır.** `ANTHROPIC_API_KEY` boşsa sistem,
-> deterministik **anahtar-kelime tabanlı yedek analiz katmanına** düşer. Böylece
-> demo, anahtar olmadan da uçtan uca çalışır. Anahtar verilirse gerçek Claude
-> çağrısı kullanılır; JSON hatasında 1 kez retry, yine başarısızsa yedek devreye girer.
+> deterministik **anahtar-kelime tabanlı yedek analiz katmanına** düşer. Anahtar
+> verilirse gerçek Claude çağrısı; JSON hatasında 1 kez retry, yine başarısızsa yedek.
 
 ### Testler
 
@@ -56,13 +76,15 @@ npm test         # skorlama motoru unit testleri (Vitest) — 20 test
 
 ## Ortam Değişkenleri (`.env`)
 
-| Değişken | Açıklama |
-|---|---|
-| `ANTHROPIC_API_KEY` | Claude API anahtarı. **Boş bırakılırsa** yedek analiz devreye girer. |
-| `DATABASE_URL` | SQLite: `file:./dev.db` |
-| `CRON_SECRET` | Cron route'ları için `Authorization: Bearer <CRON_SECRET>` |
-| `ADMIN_PASSWORD` | `/admin` paneli giriş şifresi |
-| `ADMIN_SESSION_SECRET` | Admin oturum çerezini imzalamak için gizli anahtar |
+| Değişken | Zorunlu | Açıklama |
+|---|---|---|
+| `DATABASE_URL` | ✅ | PostgreSQL bağlantı dizesi (Neon/Vercel Postgres/Supabase) |
+| `ADMIN_PASSWORD` | ✅ | `/admin` paneli giriş şifresi |
+| `ADMIN_SESSION_SECRET` | ✅ | Oturum çerezini imzalar (production'da ≥16 karakter zorunlu) |
+| `CRON_SECRET` | ✅ | Cron route'ları için `Authorization: Bearer <CRON_SECRET>` |
+| `ANTHROPIC_API_KEY` | ⬜ | Claude API anahtarı. Boşsa keyword yedeği devreye girer. |
+| `UPSTASH_REDIS_REST_URL` | ⬜ | Paylaşımlı rate limit (yoksa in-memory) |
+| `UPSTASH_REDIS_REST_TOKEN` | ⬜ | Upstash Redis token |
 
 ---
 
@@ -95,7 +117,7 @@ npm test         # skorlama motoru unit testleri (Vitest) — 20 test
                 └───────────────┬──────────────────────────────────┘
                                 │ Prisma
                 ┌───────────────▼──────────────────────────────────┐
-   KATMAN 2     │  VERİTABANI (SQLite + Prisma)                     │
+   KATMAN 2     │  VERİTABANI (PostgreSQL + Prisma)                 │
                 │  Product · Sponsorship · IngredientMap            │
                 └──────────────────────────────────────────────────┘
 
@@ -159,14 +181,17 @@ curl -X GET http://localhost:3000/api/cron/sponsor-check      -H "Authorization:
 
 ## Gerçek Affiliate / Üretim Notları
 
-- **Mock → gerçek:** `lib/affiliates/*.ts` içindeki `fetchUpdate`'i ilgili
-  affiliate API çağrısıyla değiştirin; arayüz değişmez.
-- **Rate limit:** `lib/rate-limit.ts` in-memory'dir; serverless'ta (Vercel) her
-  instance ayrı bellek tutar. Üretimde Redis/Upstash gibi paylaşımlı bir store önerilir.
-- **Veritabanı:** SQLite demo içindir. PostgreSQL'e geçiş: `schema.prisma`
-  provider'ını `postgresql` yapın; JSON dizileri için `String` alanlar `Json`'a
-  yükseltilebilir (parse yardımcıları `lib/json.ts`).
+- **Mock → gerçek affiliate:** `lib/affiliates/*.ts` içindeki `fetchUpdate`'i ilgili
+  affiliate API çağrısıyla değiştirin; `AffiliateAdapter` arayüzü değişmez. Gerçek
+  ürün verisi + komisyon linkleri eklenmeli.
+- **Rate limit:** `UPSTASH_REDIS_REST_URL`/`_TOKEN` tanımlıysa Upstash Redis
+  (sunucusuzda tutarlı), yoksa in-memory'ye düşer (`lib/rate-limit.ts`).
+- **Veritabanı:** PostgreSQL. Şema migration'ları `prisma/migrations/` altında;
+  build sırasında `prisma migrate deploy` ile uygulanır. JSON dizileri taşınabilirlik
+  için `String` (text) tutulur (`lib/json.ts`).
 - **KVKK:** `/kvkk` placeholder'ı dağıtımdan önce hukuk danışmanıyla tamamlanmalı.
+- **Güvenlik:** Production'da `ADMIN_SESSION_SECRET` zorunludur (eksik/zayıfsa
+  uygulama hata verir); demo varsayılan şifreleri kullanılmamalı.
 
 ---
 
@@ -191,5 +216,5 @@ Spec'te belirsiz/eksik kalan ve bu uygulamada netleştirilen noktalar:
 
 ## Teknoloji Yığını
 
-Next.js 14 (App Router, TypeScript strict) · Tailwind CSS · Prisma + SQLite ·
-Anthropic Claude API · Vitest · zod
+Next.js 14 (App Router, TypeScript strict) · Tailwind CSS · Prisma + PostgreSQL ·
+Anthropic Claude API · Upstash Redis (opsiyonel) · Vitest · zod

@@ -20,13 +20,10 @@ npm-debug.log*
 .env
 .env*.local
 
-# prisma / sqlite
+# prisma / sqlite (eski demo kalıntıları)
 /prisma/*.db
 /prisma/*.db-journal
-/prisma/dev.db
 *.sqlite
-# ...ama gömülü, hazır-seed'li demo veritabanı repoya dahil edilir:
-!/prisma/seed.db
 
 # typescript
 *.tsbuildinfo

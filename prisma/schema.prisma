@@ -1,13 +1,13 @@
-// Herbokolog Prisma şeması.
-// Demo için SQLite. PostgreSQL'e taşınabilir: provider'ı "postgresql" yapıp
-// JSON dizileri için String alanları Json tipine yükseltmek yeterli.
+// Herbokolog Prisma şeması (PostgreSQL — production).
+// JSON dizileri taşınabilirlik için String (text) olarak tutulur; parse
+// yardımcıları lib/json.ts içindedir.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
