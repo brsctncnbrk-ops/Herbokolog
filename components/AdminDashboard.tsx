@@ -147,6 +147,16 @@ export function AdminDashboard() {
     load();
   }
 
+  // --- Demo verisi yükle ---
+  async function seedDemo() {
+    if (!confirm("Veritabanı örnek demo verisiyle DOLDURULACAK (mevcut veriler silinir). Devam?")) return;
+    flash("Demo verisi yükleniyor...");
+    const res = await fetch("/api/admin/seed", { method: "POST" });
+    const data = await res.json();
+    flash(res.ok ? `Yüklendi: ${data.products} ürün, ${data.sponsorships} sponsorluk.` : (data.error ?? "Hata"));
+    load();
+  }
+
   // --- Cron tetikleme ---
   async function triggerCron(job: string) {
     flash(`${job} tetikleniyor...`);
@@ -170,6 +180,21 @@ export function AdminDashboard() {
           {msg}
         </div>
       )}
+
+      {/* Demo verisi */}
+      <section className="mb-8 rounded-xl border border-brand-200 bg-brand-50 p-4">
+        <h2 className="mb-1 font-semibold">Demo Verisi</h2>
+        <p className="mb-3 text-sm text-gray-600">
+          Veritabanı boşsa, tek tıkla 51 örnek ürün + etken madde haritası +
+          sponsorluk yükle. (Mevcut veriyi siler.)
+        </p>
+        <button
+          onClick={seedDemo}
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+        >
+          Demo verisini yükle (51 ürün)
+        </button>
+      </section>
 
       {/* Cron tetikleme */}
       <section className="mb-8 rounded-xl border border-gray-200 bg-white p-4">
