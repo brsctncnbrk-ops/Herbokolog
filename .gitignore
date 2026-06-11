@@ -25,6 +25,8 @@ npm-debug.log*
 /prisma/*.db-journal
 /prisma/dev.db
 *.sqlite
+# ...ama gömülü, hazır-seed'li demo veritabanı repoya dahil edilir:
+!/prisma/seed.db
 
 # typescript
 *.tsbuildinfo

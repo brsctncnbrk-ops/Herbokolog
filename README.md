@@ -11,7 +11,27 @@ deodorant/parfüm, el-ayak-tırnak. **Hedef pazar:** Türkiye (arayüz Türkçe)
 
 ---
 
-## Hızlı Başlangıç
+## Tarayıcıda Dene (Vercel — kurulumsuz)
+
+Uygulama **sıfır yapılandırmayla** Vercel'de çalışacak şekilde hazırlandı:
+harici veritabanı gerekmez. Hazır-seed'li SQLite, repoya gömülüdür ve sunucusuz
+ortamda runtime'da `/tmp`'ye yazılır (`lib/prisma.ts`). `ANTHROPIC_API_KEY`
+girilmezse keyword tabanlı yedek analiz devreye girer.
+
+**Adımlar:**
+1. [vercel.com/new](https://vercel.com/new) → **Import Git Repository** → `Herbokolog`'u seç.
+2. Branch olarak `claude/md-file-review-plan-cu5rqs` (veya merge edildiyse `main`).
+3. Framework otomatik **Next.js** algılanır. Hiçbir env değişkeni zorunlu değildir.
+4. **Deploy** → `https://...vercel.app` adresinden aç.
+5. (Opsiyonel) Gerçek Claude analizi için Project Settings → Environment Variables'a
+   `ANTHROPIC_API_KEY` ekle.
+
+> Sunucusuz ortamda yazma işlemleri (admin, cron) instance ömrü boyunca `/tmp`'de
+> tutulur; kalıcı veri için PostgreSQL'e geçiş önerilir (aşağıya bakın).
+
+---
+
+## Hızlı Başlangıç (lokal)
 
 ```bash
 npm install
