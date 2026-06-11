@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/update-products",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/discover-products",
+      "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/cron/sponsor-check",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

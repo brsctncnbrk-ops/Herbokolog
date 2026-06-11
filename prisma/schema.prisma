@@ -1,0 +1,56 @@
+// Herbokolog Prisma şeması.
+// Demo için SQLite. PostgreSQL'e taşınabilir: provider'ı "postgresql" yapıp
+// JSON dizileri için String alanları Json tipine yükseltmek yeterli.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id                String   @id @default(cuid())
+  name              String
+  brand             String
+  category          String // kategori enum (lib/config.ts)
+  subNeeds          String // JSON array: ["kepek", "yagli_sac"]
+  activeIngredients String // JSON array: ["cinko_pirition"]
+  avoidFor          String // JSON array: uyumsuz ihtiyaçlar
+  priceTier         String // "ucuz" | "orta" | "pahali"
+  price             Float // TL
+  rating            Float // 0-5, affiliate API'den
+  reviewCount       Int
+  inStock           Boolean  @default(true)
+  imageUrl          String?
+  sellerLinks       String // JSON: [{seller, url, price}]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category])
+}
+
+model Sponsorship {
+  id        String   @id @default(cuid())
+  productId String
+  category  String
+  subNeed   String? // null ise tüm kategori
+  startDate DateTime
+  endDate   DateTime // bitince otomatik devre dışı — kontrol sorgu anında yapılır
+  adLabel   String   @default("Reklam")
+  createdAt DateTime @default(now())
+
+  @@index([category])
+}
+
+model IngredientMap {
+  id         String @id @default(cuid())
+  category   String
+  subNeed    String
+  ingredient String
+  matchScore Float // 0-1: bilimsel uygunluk ağırlığı
+
+  @@index([category, subNeed])
+}
